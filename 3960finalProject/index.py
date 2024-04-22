@@ -1,5 +1,45 @@
 import pandas as pd
 import numpy as np
+import ipywidgets as widgets
+from IPython.display import display
+import io
+
+#########################
+# Code to upload a file
+#
+#########################
+# # Create a FileUpload widget to allow users to upload CSV files
+# upload = widgets.FileUpload(
+#     accept='.csv',  # Accept only CSV files
+#     multiple=False,  # Allow only one file at a time
+#     description='Upload CSV',  # Button label
+#     button_style='info'  # Optional: makes the button blue
+# )
+
+# # Define a global variable to hold the DataFrame
+# df = None  # Start with an empty variable
+
+# # Define a function to handle file uploads and set 'df' to the uploaded data
+# def on_file_upload(change):
+#     global df  # Use global keyword to indicate that we're referring to the global variable
+
+#     uploaded_files = change['new']  # Get the uploaded file(s)
+
+#     if len(uploaded_files) > 0:
+#         # Get the first uploaded file (assuming multiple=False)
+#         filename = list(uploaded_files.keys())[0]
+#         content = uploaded_files[filename]['content']  # File content as bytes
+
+#         # Read the content into a Pandas DataFrame
+#         df = pd.read_csv(io.BytesIO(content))  # Read from bytes
+
+#         print(f"CSV file '{filename}' has been loaded into 'df':")
+#         # display(df)  # Show the DataFrame content to confirm success
+
+# # Attach the callback function to the FileUpload widget
+# upload.observe(on_file_upload, names='value')
+#######################################
+
 
 df = pd.read_csv("Messy-Data.csv")
 
@@ -67,7 +107,7 @@ wrangling_score_datetime[0] = initDateTimeScore
 # makes a temp dataset and applies the to_datetime conversions
 # to the columns specified as true above
 #########################
-dfTemp = df
+dfTemp = df.copy()
 
 for col in date_column_status:
     value = date_column_status[col]
@@ -83,7 +123,7 @@ for col in date_column_status:
                 try:
                     # If successful, assign the converted value to the new column
                     converted_date = pd.to_datetime(val, format=fmt, errors='raise')
-                    df.loc[idx, 'formatted_dates'] = converted_date
+                    dfTemp.loc[idx, 'formatted_dates'] = converted_date
                     break  # Break if successful to avoid double attempts
                 except ValueError:
                     continue  # Continue to the next format
@@ -115,8 +155,69 @@ for col in date_column_status:
 #######################################
 
 
+#########################
+# Creates the UI for the program
+# creates the dropdown and the save button for the UI
+#########################
 # if the cleaned temp dataSet is < original dataset score
 # cleaned dataset is better quality
 # if true, set df to the tempDf
 if cleanedDateTimeScore < initDateTimeScore:
-    df = dfTemp
+    # Create a dropdown widget
+    dropdown = widgets.Dropdown(
+        options=["Select cleaning method...", "Clean rows with to_datetime", "none"],  # The available options
+        # value="Select cleaning method...",  # The default selected value
+        description="Choose from cleaning suggestions:", )  # Label for the dropdown
+else:
+    # Create a dropdown widget
+    dropdown = widgets.Dropdown(
+        options=["Select cleaning method...", "none", "Clean rows with to_datetime"],  # The available options
+        # value="Select cleaning method...",  # The default selected value
+        description="Choose from cleaning suggestions:", )  # Label for the dropdown
+
+# Create an output widget to display the dataset
+output = widgets.Output()
+
+
+# Define a callback function that updates the output when the dropdown changes
+def on_dropdown_change(change):
+    # Get the new value from the dropdown
+    new_value = change['new']
+
+    with output:
+        output.clear_output()  # Clear any previous output
+
+        if new_value == "Clean rows with to_datetime":
+            global df  # Indicate that we're referencing the global variable
+            df = dfTemp  # Assign the global variable to dfTemp
+            display(df)
+        elif new_value == "none":
+            display(df)
+
+
+# Connect the callback function to the dropdown's 'value' attribute
+dropdown.observe(on_dropdown_change, names="value")
+
+# Create a button widget
+save_button = widgets.Button(
+    description='Save Data',
+    tooltip='Click to save the dataset to a CSV file',
+    button_style='success'  # Green button
+)
+
+
+# Define a callback function that saves the DataFrame to a CSV file
+def save_to_csv(button):
+    filename = 'saved_dataset.csv'  # Name of the CSV file
+    df.to_csv(filename, index=False)  # Save the DataFrame without the index
+
+    # Inform the user that the file has been saved
+    print(f"Dataset has been saved to '{filename}'.")
+
+
+# Attach the callback function to the button
+save_button.on_click(save_to_csv)
+
+# # Display the dropdown and the output widget
+display(dropdown, save_button, output)
+#######################################
