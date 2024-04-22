@@ -115,11 +115,8 @@ for col in date_column_status:
     if value:
         # Initialize the new column with NaT (Not a Time)
         dfTemp['formatted_dates'] = np.datetime64('NaT')
-        # print(col)
 
         for idx, val in enumerate(dfTemp[col]):
-            # print(val)
-            # for val in key:
             for fmt in possible_formats:
                 try:
                     # If successful, assign the converted value to the new column
