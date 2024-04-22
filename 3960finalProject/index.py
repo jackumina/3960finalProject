@@ -40,8 +40,9 @@ import io
 # upload.observe(on_file_upload, names='value')
 #######################################
 
-
+# you can change the file by hardcoding the file name here
 df = pd.read_csv("Messy-Data.csv")
+# df = pd.read_csv("Untitled.csv")
 
 # get initial data quality score
 wrangling_score_datetime = {}
